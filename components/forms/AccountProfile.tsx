@@ -1,25 +1,25 @@
 "use client"
 
-import { useForm } from "react-hook-form";
-import { zodResolver } from '@hookform/resolvers/zod';
-import { UserValidation } from "@/lib/validations/user";
+import { Button } from "@/components/ui/button";
 import {
     Form,
     FormControl,
     FormField,
     FormItem,
-    FormLabel,
-    FormMessage,
-    FormDescription
+    FormLabel
 } from "@/components/ui/form";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import * as z from 'zod';
+import { useUploadThing } from '@/lib/uploadthing';
+import { isBase64Image } from "@/lib/utils";
+import { UserValidation } from "@/lib/validations/user";
+import { zodResolver } from '@hookform/resolvers/zod';
 import Image from "next/image";
 import { ChangeEvent, useState } from "react";
+import { useForm } from "react-hook-form";
+import * as z from 'zod';
 import { Textarea } from "../ui/textarea";
-import { isBase64Image } from "@/lib/utils";
-import { useUploadThing } from '@/lib/uploadthing';
+import { updateUser } from "@/lib/actions/user.action";
+import { usePathname, useRouter } from "next/navigation";
 
 interface Props {
     user: {
@@ -36,6 +36,8 @@ interface Props {
 const AccountProfile = ({ user, btnTitle }: Props) => {
     const [files, setFiles] = useState<File[]>([]);
     const { startUpload } = useUploadThing("media");
+    const router = useRouter();
+    const pathname = usePathname();
 
     const form = useForm({
         resolver: zodResolver(UserValidation),
@@ -67,7 +69,6 @@ const AccountProfile = ({ user, btnTitle }: Props) => {
 
             fileReader.readAsDataURL(file);
         }
-
     }
 
     const onSubmit = async (values: z.infer<typeof UserValidation>) => {
@@ -82,6 +83,15 @@ const AccountProfile = ({ user, btnTitle }: Props) => {
                 values.profile_photo = imgRes[0].url
             }
         }
+
+        await updateUser({
+            userId: user.id,
+            username: values.username,
+            name: values.name,
+            bio: values.bio,
+            image: values.profile_photo,
+            path: pathname
+        });
     }
 
     return (
