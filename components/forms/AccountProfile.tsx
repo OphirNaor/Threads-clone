@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -6,7 +6,8 @@ import {
     FormControl,
     FormField,
     FormItem,
-    FormLabel
+    FormLabel,
+    FormMessage
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useUploadThing } from '@/lib/uploadthing';
@@ -18,14 +19,14 @@ import { ChangeEvent, useState } from "react";
 import { useForm } from "react-hook-form";
 import * as z from 'zod';
 import { Textarea } from "../ui/textarea";
-import { updateUser } from "@/lib/actions/user.action";
+import { updateUser } from "@/lib/actions/user.actions";
 import { usePathname, useRouter } from "next/navigation";
 
 interface Props {
     user: {
         id: string;
         objectId: string;
-        userName: string;
+        username: string;
         name: string;
         bio: string;
         image: string;
@@ -39,14 +40,14 @@ const AccountProfile = ({ user, btnTitle }: Props) => {
     const router = useRouter();
     const pathname = usePathname();
 
-    const form = useForm({
+    const form = useForm<z.infer<typeof UserValidation>>({
         resolver: zodResolver(UserValidation),
         defaultValues: {
-            profile_photo: user?.image || '',
-            name: user?.name || '',
-            username: user?.userName || '',
-            bio: user?.bio || ''
-        }
+            profile_photo: user?.image ? user.image : "",
+            name: user?.name ? user.name : "",
+            username: user?.username ? user.username : "",
+            bio: user?.bio ? user.bio : "",
+        },
     });
 
     const handleImage = (e: ChangeEvent<HTMLInputElement>, fieldChange: (value: string) => void) => {
@@ -63,7 +64,6 @@ const AccountProfile = ({ user, btnTitle }: Props) => {
 
             fileReader.onload = async (event) => {
                 const imageDataUrl = event.target?.result?.toString() || '';
-
                 fieldChange(imageDataUrl);
             }
 
@@ -73,11 +73,10 @@ const AccountProfile = ({ user, btnTitle }: Props) => {
 
     const onSubmit = async (values: z.infer<typeof UserValidation>) => {
         const blob = values.profile_photo;
-
         const hasImageChanged = isBase64Image(blob);
 
         if (hasImageChanged) {
-            const imgRes = await startUpload(files)
+            const imgRes = await startUpload(files);
 
             if (imgRes && imgRes[0].url) {
                 values.profile_photo = imgRes[0].url
@@ -101,8 +100,10 @@ const AccountProfile = ({ user, btnTitle }: Props) => {
     }
 
     return (
-        <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col justify-start gap-10">
+        <Form {...form} >
+            <form
+                onSubmit={form.handleSubmit(onSubmit)}
+                className="flex flex-col justify-start gap-10">
                 <FormField
                     control={form.control}
                     name="profile_photo"
@@ -112,7 +113,7 @@ const AccountProfile = ({ user, btnTitle }: Props) => {
                                 {field.value ? (
                                     <Image
                                         src={field.value}
-                                        alt="profile photo"
+                                        alt="profile_icon"
                                         width={96}
                                         height={96}
                                         priority
@@ -121,7 +122,7 @@ const AccountProfile = ({ user, btnTitle }: Props) => {
                                 ) : (
                                     <Image
                                         src='/assets/profile.svg'
-                                        alt="profile photo"
+                                        alt="profile_icon"
                                         width={24}
                                         height={24}
                                         className="object-contain"
@@ -155,6 +156,7 @@ const AccountProfile = ({ user, btnTitle }: Props) => {
                                     {...field}
                                 />
                             </FormControl>
+                            <FormMessage />
                         </FormItem>
                     )}
                 />
@@ -173,6 +175,7 @@ const AccountProfile = ({ user, btnTitle }: Props) => {
                                     {...field}
                                 />
                             </FormControl>
+                            <FormMessage />
                         </FormItem>
                     )}
                 />
@@ -188,12 +191,14 @@ const AccountProfile = ({ user, btnTitle }: Props) => {
                                 <Textarea
                                     rows={10}
                                     className="account-form_input no-focus"
+                                    {...field}
                                 />
                             </FormControl>
+                            <FormMessage />
                         </FormItem>
                     )}
                 />
-                <Button className="bg-primary-500" type="submit">Submit</Button>
+                <Button className="bg-primary-500" type='submit'>Submit</Button>
             </form>
         </Form>
     )
